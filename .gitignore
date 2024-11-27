@@ -1,0 +1,4 @@
+*.venv
+*JOURNALISM.BG
+*__pycache__
+*.ipynb
