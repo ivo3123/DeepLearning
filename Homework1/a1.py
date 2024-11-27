@@ -43,7 +43,35 @@ def editDistance(s1: str, s2: str) -> np.ndarray:
 	#############################################################################
 	#### Начало на Вашия код. На мястото на pass се очакват 15-30 реда
     
-    pass
+    d_t_lengths_levenshtein_damerau_distance = {}
+
+    def _levenshtein_damerau_distance(s1: str, s2: str) -> int:
+        cached_res = d_t_lengths_levenshtein_damerau_distance.get((len(s1), len(s2)))
+
+        if cached_res is not None:
+            return cached_res
+        
+        res = min(
+            0 if len(s1) == 0 and len(s2) == 0 else float('+inf'),
+            _levenshtein_damerau_distance(s1=s1[0:-1], s2=s2) + 1 if len(s1) > 0 else float('+inf'),
+            _levenshtein_damerau_distance(s1=s1, s2=s2[0:-1]) + 1 if len(s2) > 0 else float('+inf'),
+            _levenshtein_damerau_distance(s1=s1[0:-1], s2=s2[0:-1]) + (s1[-1] != s2[-1]) if len(s1) > 0 and len(s2) > 0 else float('+inf'),
+            _levenshtein_damerau_distance(s1=s1[0:-2], s2=s2[0:-2]) + 1 if len(s1) > 1 and len(s2) > 1 and (s1[-1] == s2[-2]) and (s1[-2] == s2[-1]) else float('+inf'),
+        )
+
+        d_t_lengths_levenshtein_damerau_distance[(len(s1), len(s2))] = res
+
+        return res
+    
+    _ = _levenshtein_damerau_distance(s1=s1, s2=s2)
+
+    np_matrix = np.zeros((len(s1)+1, len(s2)+1))
+
+    for i in range(0, len(s1)+1):
+        for j in range(0, len(s2)+1):
+            np_matrix[i, j] = d_t_lengths_levenshtein_damerau_distance[(i, j)]
+
+    M = np_matrix
 
 	#### Край на Вашия код
 	#############################################################################
@@ -58,7 +86,27 @@ def editWeight(s1, s2, Weight):
 	#############################################################################
 	#### Начало на Вашия код. На мястото на pass се очакват 15-30 реда
 
-	pass
+	d_t_lengths_weight = {}
+
+	def _get_min_weight(s1: str, s2: str) -> int:
+		cached_res = d_t_lengths_weight.get((len(s1), len(s2)))
+
+		if cached_res is not None:
+			return cached_res
+		
+		res = min(
+			0 if len(s1) == 0 and len(s2) == 0 else float('+inf'),
+			_get_min_weight(s1=s1[0:-1], s2=s2) + Weight[(s1[-1], "")] if len(s1) > 0 else float('+inf'),
+			_get_min_weight(s1=s1, s2=s2[0:-1]) + Weight[("", s2[-1])] if len(s2) > 0 else float('+inf'),
+			_get_min_weight(s1=s1[0:-1], s2=s2[0:-1]) + Weight[(s1[-1], s2[-1])] if len(s1) > 0 and len(s2) > 0 else float('+inf'),
+			_get_min_weight(s1=s1[0:-2], s2=s2[0:-2]) + Weight[(s1[-2:], s2[-2:])] if len(s1) > 1 and len(s2) > 1 and (s1[-1] == s2[-2]) and (s1[-2] == s2[-1]) else float('+inf'),
+		)
+
+		d_t_lengths_weight[(len(s1), len(s2))] = res
+
+		return res
+	
+	return _get_min_weight(s1=s1, s2=s2)
 
 	#### Край на Вашия код
 	#############################################################################
