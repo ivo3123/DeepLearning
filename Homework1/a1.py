@@ -28,6 +28,7 @@
 import langmodel
 import math
 import numpy as np
+from tqdm import tqdm
 
 def editDistance(s1: str, s2: str) -> np.ndarray:
 	#### функцията намира разстоянието на Левенщайн - Дамерау между два низа
@@ -142,7 +143,32 @@ def bestAlignment(s1, s2):
 	#############################################################################	
 	#### Начало на Вашия код. На мястото на pass се очакват 15-30 реда
 
-	pass
+	alignment = []
+
+	i = len(s1)
+	j = len(s2)
+
+	i, j = len(s1), len(s2)
+
+	while i > 0 or j > 0:
+		current_value = M[i, j]
+
+		if i > 0 and j > 0 and M[i - 1, j - 1] + (s1[i - 1] != s2[j - 1]) == current_value:
+			alignment.append((s1[i - 1], s2[j - 1]))
+			i -= 1
+			j -= 1
+		elif i > 1 and j > 1 and s1[i - 1] == s2[j - 2] and s1[i - 2] == s2[j - 1] and M[i - 2, j - 2] + 1 == current_value:
+			alignment.append((s1[i - 2:i], s2[j - 2:j]))
+			i -= 2
+			j -= 2
+		elif i > 0 and M[i - 1, j] + 1 == current_value:
+			alignment.append((s1[i - 1], ""))
+			i -= 1
+		elif j > 0 and M[i, j - 1] + 1 == current_value:
+			alignment.append(("", s2[j - 1]))
+			j -= 1
+
+	alignment = alignment[::-1]
 			
 	#### Край на Вашия код
 	#############################################################################
@@ -158,7 +184,7 @@ def trainWeights(corpus):
 	opCount = {}
 	
 	ids = subs = ins = dels = trs = 0
-	for q,r in corpus:
+	for q,r in tqdm(corpus):
 		alignment = bestAlignment(q,r)
 		for op in alignment:
 			if len(op[0]) == 1 and  len(op[1]) == 1 and op[0] == op[1]: ids += 1
@@ -190,7 +216,32 @@ def generateEdits(q):
 	#############################################################################
 	#### Начало на Вашия код. На мястото на pass се очакват 10-15 реда
 
-	pass
+	l_strings_at_distance_1_from_q = []
+
+	l_characters = langmodel.alphabet
+
+	for character in l_characters:
+		for i in range(len(q)+1):
+			try:
+				if character != q[i]:
+					string_at_distance_1_from_q = q[0:i] + character + q[i+1:]
+					l_strings_at_distance_1_from_q.append(string_at_distance_1_from_q)
+			except:
+				pass
+
+			string_at_distance_1_from_q = q[0:i] + character + q[i:]
+			l_strings_at_distance_1_from_q.append(string_at_distance_1_from_q)
+	
+	for i in range(len(q)):
+		string_at_distance_1_from_q = q[0:i] + q[i+1:]
+		l_strings_at_distance_1_from_q.append(string_at_distance_1_from_q)
+
+	for i in range(len(q)-1):
+		if q[i] != q[i+1]:
+			string_at_distance_1_from_q = q[0:i] + q[i+1] + q[i] + q[i+2:]
+			l_strings_at_distance_1_from_q.append(string_at_distance_1_from_q)
+
+	return l_strings_at_distance_1_from_q
 
 	#### Край на Вашия код
 	#############################################################################
@@ -224,7 +275,7 @@ def generateCandidates(query,dictionary):
 
 
 
-def correctSpelling(r, model, weights, mu = 1.0, alpha = 0.9):
+def correctSpelling(r, model: langmodel.MarkovModel, weights, mu = 1.0, alpha = 0.9):
 	### Комбинира вероятността от езиковия модел с вероятността за редактиране на кандидатите за корекция, генерирани от generate_candidates за намиране на най-вероятната желана (коригирана) заявка по дадената оригинална заявка query.
 	###
 	### Вход:
@@ -241,9 +292,26 @@ def correctSpelling(r, model, weights, mu = 1.0, alpha = 0.9):
 	#############################################################################
 	#### Начало на Вашия код за основното тяло на функцията correct_spelling. На мястото на pass се очакват 3-10 реда
 
-	pass
+	l_dictionary = model.kgrams[()].keys()
+
+	l_candidates = generateCandidates(query=r, dictionary=l_dictionary)
+
+	l_t_candidate_probability = []
+
+	for candidate in tqdm(l_candidates, desc=f"mu = "):
+		correction_model_probability = -np.log(editWeight(s1=r, s2=candidate, Weight=weights))
+
+		language_model_probability = model.sentenceLogProbability(s=candidate, alpha=alpha)
+		combined_probability = correction_model_probability * (language_model_probability ** mu)
+
+		l_t_candidate_probability.append((candidate, combined_probability))
+
+	l_t_candidate_probability_sorted = sorted(l_t_candidate_probability, key=lambda x: x[1])
+
+	try:
+		return l_t_candidate_probability_sorted[-1][0]
+	except:
+		return None
 
 	#### Край на Вашия код
 	#############################################################################
-
-
