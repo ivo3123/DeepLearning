@@ -75,40 +75,26 @@ print("Функцията bestAlignment премина теста.")
 
 #### Тест на correct_spelling
 
-# print('Прочитане на корпуса от текстове...')
+print('Прочитане на корпуса от текстове...')
 # corpus_root = 'JOURNALISM.BG/C-MassMedia'
 # myCorpus = PlaintextCorpusReader(corpus_root, '.*\.txt')
 # fullSentCorpus = [ [langmodel.startToken] + [w.lower() for w in sent] + [langmodel.endToken] for sent in myCorpus.sents()]
-# print('Готово.')
-
-print('Прочитане на корпуса от текстове...')
 df = pd.read_parquet("../data/bulgarian_news_from_2012.parquet")
 fullSentCorpus = df["Sentences"].tolist()
 print('Готово.')
-print()
 
 print('Трениране на Марковски езиков модел...')
 M2 = langmodel.MarkovModel(fullSentCorpus,2)
 print('Готово.')
-print()
 
 print('Прочитане на корпуса със правописни грешки...')
 with open('corpus', encoding='utf-8') as f: 
 	lines = f.read().split('\n')[:-1]
 error_corpus = [c.split('\t') for c in lines]
 print('Готово.')
-print()
 
-print('Трениране на тегла...')
 weights = a1.trainWeights(error_corpus)
-print('Готово.')
-print()
 
 assert a1.correctSpelling("светфно по футбол",M2,weights,1.0) == 'световно по футбол', "Коригираната заявка следва да е 'световно по футбол'"
 print("Функцията correctSpelling премина теста.")
-
-for mu in [0.001, 0.1, 0.5, 1, 2, 5, 10, 15, 20, 50]:
-	att2 = a1.correctSpelling("знам че ше убиа", M2, weights, mu=mu, alpha=0.9)
-	print(att2)
-	print()
 
